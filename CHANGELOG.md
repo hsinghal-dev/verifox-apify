@@ -1,9 +1,12 @@
 # Changelog
 
+## 0.2.0
+- Reliability: automatic retry with backoff on rate-limits (429), transient 5xx,
+  and network errors — for both realtime and bulk paths.
+- Run summary written to the key-value store as `OUTPUT` (counts by verdict).
+- Cleaner status messages and end-of-run summary.
+- World-class README (features, output example, use cases, integrations, FAQ).
+
 ## 0.1.0
-- Initial release.
-- Realtime verification (one request per email, configurable concurrency).
-- Bulk verification via the Verifox bulk API (submit → poll → paginate).
-- `auto` mode picks realtime vs bulk by list size.
-- Bring-your-own Verifox API key; runs on the caller's credits.
-- Dataset output view with labelled columns.
+- Initial release: realtime + bulk verification, auto mode, BYO Verifox API key,
+  full-field dataset output with a labelled table view.
