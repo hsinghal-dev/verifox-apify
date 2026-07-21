@@ -9,12 +9,19 @@ Bulk-verify email deliverability with **[Verifox](https://verifox.ai)** — righ
 | Field | Meaning |
 |-------|---------|
 | `email` | The address checked |
-| `reachable` | `yes` / `no` / `unknown` — SMTP deliverability |
+| `reachable` | `safe` / `risky` / `invalid` / `unknown` — deliverability verdict |
 | `isValid` | Passes syntax + MX + SMTP checks |
 | `score` | Quality score 0–100 |
+| `syntax` | Valid address format |
+| `smtp` | SMTP detail object: `hostExists`, `deliverable`, `catchAll`, `fullInbox`, `disabled` |
 | `isDisposable` | Throwaway/temp-mail provider |
 | `isRole` | Role address (info@, sales@, …) |
 | `isFree` | Free provider (gmail, yahoo, …) |
+| `hasGravatar` | Address has a Gravatar profile |
+| `suggestion` | Typo fix suggestion (e.g. `gmial.com` → `gmail.com`), or `null` |
+| `domain` | Domain part of the address |
+| `source` | How the result was produced |
+| `verifiedAt` | ISO timestamp of the check |
 | `ok` / `error` | `false` + reason if a single address couldn't be checked |
 
 Results land in the Actor's **dataset** — export to CSV, JSON, or Excel, or push them straight into your next step.
