@@ -55,10 +55,16 @@ function assertAuthAndCredits(status) {
 
 const useBulk = mode === 'bulk' || (mode === 'auto' && emails.length > 500);
 
-if (useBulk) {
-  await runBulk();
-} else {
-  await runRealtime();
+try {
+  if (useBulk) {
+    await runBulk();
+  } else {
+    await runRealtime();
+  }
+} catch (err) {
+  // Fail with a clean, readable reason instead of an "uncaught exception".
+  const message = err instanceof Error ? err.message : String(err);
+  await Actor.fail(`Run failed: ${message}`);
 }
 
 await Actor.exit();
