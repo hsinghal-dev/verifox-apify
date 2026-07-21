@@ -14,7 +14,7 @@
     "apiKey": {
       "title": "Verifox API key",
       "type": "string",
-      "description": "Your Verifox API key — create one in the Verifox dashboard (Settings → API keys) at https://verifox.ai. Verifications consume YOUR Verifox credits (free signup includes 1,000).",
+      "description": "Your Verifox API key. Create one here → https://verifox.ai/dashboard/api (free signup includes 1,000 credits). Verifications run on YOUR Verifox account and use YOUR credits.",
       "editor": "textfield",
       "isSecret": true
     },

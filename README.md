@@ -22,7 +22,7 @@ Results land in the Actor's **dataset** — export to CSV, JSON, or Excel, or pu
 ## Setup (30 seconds)
 
 1. Create a free **Verifox** account at **https://verifox.ai** (free signup includes **1,000 credits**).
-2. In the dashboard go to **Settings → API keys** and copy your key.
+2. Open **[https://verifox.ai/dashboard/api](https://verifox.ai/dashboard/api)** and create an API key.
 3. Paste it into this Actor's **Verifox API key** field.
 
 Each verification uses **one Verifox credit from your own account**. Top up anytime in the Verifox dashboard.
