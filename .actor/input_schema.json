@@ -1,0 +1,37 @@
+{
+  "title": "Verifox Email Verifier",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "emails": {
+      "title": "Emails",
+      "type": "array",
+      "description": "Email addresses to verify. Paste a list, or map in a field from another Actor's dataset.",
+      "editor": "stringList",
+      "prefill": ["support@stripe.com"]
+    },
+    "apiKey": {
+      "title": "Verifox API key",
+      "type": "string",
+      "description": "Your Verifox API key — create one in the Verifox dashboard (Settings → API keys) at https://verifox.ai. Verifications consume YOUR Verifox credits (free signup includes 1,000).",
+      "editor": "textfield",
+      "isSecret": true
+    },
+    "concurrency": {
+      "title": "Concurrency",
+      "type": "integer",
+      "description": "How many emails to verify in parallel (1–20). Higher is faster but uses your credits quicker.",
+      "default": 5,
+      "minimum": 1,
+      "maximum": 20
+    },
+    "apiBaseUrl": {
+      "title": "API base URL (advanced)",
+      "type": "string",
+      "description": "Override the Verifox API base URL. Leave as default unless told otherwise.",
+      "editor": "textfield",
+      "default": "https://api.verifox.ai"
+    }
+  },
+  "required": ["emails", "apiKey"]
+}

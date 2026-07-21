@@ -1,0 +1,9 @@
+{
+  "actorSpecification": 1,
+  "name": "verifox-email-verifier",
+  "title": "Verifox Email Verifier",
+  "description": "Bulk-verify email deliverability with Verifox — syntax, MX, SMTP, disposable/role/free detection, and a quality score. Bring your own Verifox API key.",
+  "version": "0.1",
+  "input": "./input_schema.json",
+  "dockerfile": "../Dockerfile"
+}
