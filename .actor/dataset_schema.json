@@ -1,0 +1,49 @@
+{
+  "actorSpecification": 1,
+  "fields": {
+    "type": "object",
+    "properties": {
+      "email": { "type": "string" },
+      "reachable": { "type": "string" },
+      "isValid": { "type": "boolean" },
+      "score": { "type": "number" },
+      "isDisposable": { "type": "boolean" },
+      "isRole": { "type": "boolean" },
+      "isFree": { "type": "boolean" },
+      "ok": { "type": "boolean" },
+      "error": { "type": "string" }
+    }
+  },
+  "views": {
+    "overview": {
+      "title": "Verification results",
+      "transformation": {
+        "fields": [
+          "email",
+          "reachable",
+          "isValid",
+          "score",
+          "isDisposable",
+          "isRole",
+          "isFree",
+          "ok",
+          "error"
+        ]
+      },
+      "display": {
+        "component": "table",
+        "properties": {
+          "email": { "label": "Email" },
+          "reachable": { "label": "Reachable" },
+          "isValid": { "label": "Valid" },
+          "score": { "label": "Score" },
+          "isDisposable": { "label": "Disposable" },
+          "isRole": { "label": "Role" },
+          "isFree": { "label": "Free provider" },
+          "ok": { "label": "OK" },
+          "error": { "label": "Error" }
+        }
+      }
+    }
+  }
+}

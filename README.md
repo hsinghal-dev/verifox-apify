@@ -2,6 +2,8 @@
 
 Bulk-verify email deliverability with **[Verifox](https://verifox.ai)** — right inside your Apify workflows. Feed it a list of emails (or pipe in a dataset from any scraper) and get a clean, per-email verdict: is it valid, reachable, disposable, role-based, free-provider, and how good is it (0–100 score).
 
+> **Bring your own key.** This Actor is **free to run** — verifications go through *your* Verifox account and use *your* credits. Free Verifox signup includes **1,000 credits**.
+
 ## What you get per email
 
 | Field | Meaning |
@@ -9,12 +11,11 @@ Bulk-verify email deliverability with **[Verifox](https://verifox.ai)** — righ
 | `email` | The address checked |
 | `reachable` | `yes` / `no` / `unknown` — SMTP deliverability |
 | `isValid` | Passes syntax + MX + SMTP checks |
-| `syntax` | Valid address format |
-| `smtp` | SMTP mailbox check detail |
+| `score` | Quality score 0–100 |
 | `isDisposable` | Throwaway/temp-mail provider |
 | `isRole` | Role address (info@, sales@, …) |
 | `isFree` | Free provider (gmail, yahoo, …) |
-| `score` | Quality score 0–100 |
+| `ok` / `error` | `false` + reason if a single address couldn't be checked |
 
 Results land in the Actor's **dataset** — export to CSV, JSON, or Excel, or push them straight into your next step.
 
@@ -24,7 +25,15 @@ Results land in the Actor's **dataset** — export to CSV, JSON, or Excel, or pu
 2. In the dashboard go to **Settings → API keys** and copy your key.
 3. Paste it into this Actor's **Verifox API key** field.
 
-Each verification uses **one Verifox credit from your own account** — this Actor is free to run; you only pay for what you verify, at Verifox's rates. Top up anytime in the Verifox dashboard.
+Each verification uses **one Verifox credit from your own account**. Top up anytime in the Verifox dashboard.
+
+## Modes
+
+| Mode | How it works | Best for |
+|------|--------------|----------|
+| **Auto** (default) | Picks per list size — bulk when > 500 emails, else realtime | Most runs |
+| **Realtime** | One request per email, run in parallel (`concurrency`), streamed to the dataset as they finish | Small/medium lists, live progress |
+| **Bulk** | Submits the whole list to the Verifox bulk API, polls to completion, then collects results | Very large lists (up to 100k), fewest HTTP calls |
 
 ## Input
 
@@ -32,10 +41,11 @@ Each verification uses **one Verifox credit from your own account** — this Act
 |-------|----------|-------------|
 | `emails` | ✅ | List of emails (paste, or map a field from another Actor) |
 | `apiKey` | ✅ | Your Verifox API key (kept secret) |
-| `concurrency` | — | Parallel verifications, 1–20 (default 5) |
+| `mode` | — | `auto` (default) · `realtime` · `bulk` |
+| `concurrency` | — | Parallel verifications in realtime mode, 1–20 (default 5) |
 | `apiBaseUrl` | — | Advanced override; leave default |
 
-## Example use
+## Example uses
 
 - Clean a scraped lead list before importing to your CRM.
 - Verify newsletter signups to protect sender reputation.
@@ -43,9 +53,9 @@ Each verification uses **one Verifox credit from your own account** — this Act
 
 ## Notes
 
-- Invalid/undeliverable input is still returned as a row (`ok: false` + reason) so you never silently lose an address.
-- An invalid key (401/403) or empty balance (402) stops the run with a clear message.
+- In realtime mode, invalid/undeliverable input is still returned as a row (`ok: false` + reason) so you never silently lose an address.
+- An invalid key (`401`/`403`) or empty balance (`402`) stops the run with a clear message.
 
 ---
 
-Powered by [Verifox](https://verifox.ai) — real-time email verification API.
+Powered by [Verifox](https://verifox.ai) — real-time email verification API. Licensed under [MIT](./LICENSE).

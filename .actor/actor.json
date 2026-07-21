@@ -4,6 +4,12 @@
   "title": "Verifox Email Verifier",
   "description": "Bulk-verify email deliverability with Verifox — syntax, MX, SMTP, disposable/role/free detection, and a quality score. Bring your own Verifox API key.",
   "version": "0.1",
+  "dockerfile": "../Dockerfile",
+  "readme": "../README.md",
   "input": "./input_schema.json",
-  "dockerfile": "../Dockerfile"
+  "storages": {
+    "dataset": "./dataset_schema.json"
+  },
+  "minMemoryMbytes": 256,
+  "maxMemoryMbytes": 1024
 }
