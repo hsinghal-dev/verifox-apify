@@ -12,13 +12,16 @@
       "prefill": ["support@stripe.com"]
     },
     "apiKey": {
+      "sectionCaption": "Verifox API key",
+      "sectionDescription": "No key yet? **[Create one free at verifox.ai/dashboard/api →](https://verifox.ai/dashboard/api)** — free signup includes 1,000 credits. Verifications run on your own Verifox account and use your credits.",
       "title": "Verifox API key",
       "type": "string",
-      "description": "Your Verifox API key. Create one here → https://verifox.ai/dashboard/api (free signup includes 1,000 credits). Verifications run on YOUR Verifox account and use YOUR credits.",
+      "description": "Paste your Verifox API key. Get it at https://verifox.ai/dashboard/api",
       "editor": "textfield",
       "isSecret": true
     },
     "mode": {
+      "sectionCaption": "Options",
       "title": "Verification mode",
       "type": "string",
       "description": "auto = pick per list size (bulk when > 500). realtime = one request per email, streamed. bulk = submit the whole list to the Verifox bulk API, then collect results.",
