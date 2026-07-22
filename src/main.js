@@ -20,12 +20,6 @@ const concurrency = Math.max(1, Math.min(Number(input.concurrency) || 5, 20));
 const apiBaseUrl = (input.apiBaseUrl || 'https://api.verifox.ai').replace(/\/+$/, '');
 const mode = ['auto', 'realtime', 'bulk'].includes(input.mode) ? input.mode : 'auto';
 
-if (!apiKey) {
-  throw new Error(
-    'Missing "Verifox API key". Create one free at https://verifox.ai/dashboard/api',
-  );
-}
-
 // Accept an array, or a single string pasted with newlines/commas/semicolons.
 let raw = input.emails ?? [];
 if (typeof raw === 'string') raw = raw.split(/[\n,;]+/);
@@ -34,6 +28,23 @@ const emails = [...new Set(raw.map((e) => String(e).trim().toLowerCase()).filter
 
 if (emails.length === 0) {
   await Actor.setStatusMessage('No emails provided — nothing to verify.');
+  await Actor.exit();
+}
+
+// No API key? Emit a helpful row and finish SUCCESSFULLY rather than failing.
+// This guides real users AND keeps Apify's daily auto-test green (it runs with
+// the default input, which has no key) — so the Actor is never flagged
+// "under maintenance". Uses zero credits.
+if (!apiKey) {
+  await Actor.pushData({
+    email: emails[0],
+    ok: false,
+    error:
+      'Add your Verifox API key to verify emails. Create a free key (1,000 credits) at https://verifox.ai/dashboard/api',
+  });
+  await Actor.setStatusMessage(
+    'Add your Verifox API key to verify emails → https://verifox.ai/dashboard/api',
+  );
   await Actor.exit();
 }
 

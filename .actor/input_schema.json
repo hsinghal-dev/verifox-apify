@@ -46,5 +46,5 @@
       "default": "https://api.verifox.ai"
     }
   },
-  "required": ["emails", "apiKey"]
+  "required": ["emails"]
 }
