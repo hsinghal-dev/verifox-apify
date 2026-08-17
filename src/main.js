@@ -1,20 +1,3 @@
-// Verifox Email Verifier — Apify actor (fully managed, no API key needed).
-//
-// Users paste only emails. Verification runs on a Verifox key that the Actor
-// owner sets ONCE as a secret env var (VERIFOX_API_KEY) in the Apify Console —
-// never exposed to users. Billing is handled by Apify's pay-per-event
-// monetization: every successfully verified email is metered via Actor.charge().
-//
-// Modes (input.mode):
-//   - realtime : POST /v1/email-validation per email at `concurrency` over SSE,
-//                so catch-all Gmail/Microsoft get the full deep-check upgrade
-//                (risky → safe/invalid). One dataset row streams per result.
-//   - bulk     : POST /v1/email-validation/bulk once, poll progress, page results.
-//                Fewest HTTP calls; best for very large lists.
-//   - auto     : bulk when the list is large (> 500), else realtime. (default)
-//
-// Resilient to rate-limits/transient errors (retry with backoff) and fails with
-// a readable reason. Writes a run summary to the key-value store.
 import { Actor } from 'apify';
 
 await Actor.init();
@@ -26,7 +9,6 @@ const apiBaseUrl = (input.apiBaseUrl || 'https://api.verifox.ai').replace(/\/+$/
 const mode = ['auto', 'realtime', 'bulk'].includes(input.mode) ? input.mode : 'auto';
 const CHARGE_EVENT = 'email-verified';
 
-// Accept an array, or a single string pasted with newlines/commas/semicolons.
 let raw = input.emails ?? [];
 if (typeof raw === 'string') raw = raw.split(/[\n,;]+/);
 if (!Array.isArray(raw)) raw = [];
@@ -37,15 +19,11 @@ if (emails.length === 0) {
   await Actor.exit();
 }
 
-// Not configured yet? Emit a helpful row and finish SUCCESSFULLY rather than
-// failing. This keeps Apify's daily auto-test green until the owner sets the key
-// and charges nothing. Owner sets VERIFOX_API_KEY (Secret) in Actor Settings.
 if (!apiKey) {
   await Actor.pushData({
     email: emails[0],
     ok: false,
-    error:
-      'Actor is not configured yet (missing VERIFOX_API_KEY). The owner must set it in Actor Settings → Environment variables.',
+    error: 'Actor is not configured yet (missing VERIFOX_API_KEY). The owner must set it in Actor Settings → Environment variables.',
   });
   await Actor.setStatusMessage('Actor not configured — VERIFOX_API_KEY is not set.');
   await Actor.exit();
@@ -55,9 +33,8 @@ const headers = { 'content-type': 'application/json', 'x-api-key': apiKey };
 const singleUrl = `${apiBaseUrl}/v1/email-validation`;
 const bulkUrl = `${apiBaseUrl}/v1/email-validation/bulk`;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const backoff = (attempt) => Math.min(1000 * 2 ** attempt, 15000); // 1s,2s,4s… ≤15s
+const backoff = (attempt) => Math.min(1000 * 2 ** attempt, 15000);
 
-// Running tally, persisted as the run's OUTPUT record.
 const summary = {
   total: emails.length,
   verified: 0,
@@ -66,7 +43,6 @@ const summary = {
   reachable: { safe: 0, risky: 0, invalid: 0, unknown: 0 },
 };
 
-/** Fetch with retry on rate-limits (429), transient 5xx, and network errors. */
 async function fetchWithRetry(url, options = {}, retries = 3) {
   let attempt = 0;
   for (;;) {
@@ -88,13 +64,6 @@ async function fetchWithRetry(url, options = {}, retries = 3) {
   }
 }
 
-/**
- * Read the verify endpoint's Server-Sent Events stream and return the final
- * verdict. The server emits the phase-1 result (`deepCheckPending: true`), then —
- * for catch-all Gmail/Microsoft — a deep-checked upgrade (`deepCheckPending:
- * false`). We keep the last `result` event, drop the internal flag, and map an
- * `error` event to a failure.
- */
 async function readFinalSSEResult(res) {
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
@@ -116,7 +85,7 @@ async function readFinalSSEResult(res) {
       try {
         lastResult = JSON.parse(payload);
       } catch {
-        // Ignore a partial/non-JSON payload; a later event supersedes it.
+        /* superseded by a later event */
       }
     } else if (name === 'error') {
       try {
@@ -146,7 +115,6 @@ async function readFinalSSEResult(res) {
   return { error: errorMessage ?? 'Stream ended without a result.' };
 }
 
-/** Auth/credit failures are fatal — no point retrying the rest of the list. */
 function assertAuthAndCredits(status) {
   if (status === 401 || status === 403) {
     throw new Error('Verification is temporarily unavailable (auth error). Please try again later.');
@@ -156,17 +124,15 @@ function assertAuthAndCredits(status) {
   }
 }
 
-/** Meter one successful verification via Apify pay-per-event billing. */
 async function charge() {
   try {
     await Actor.charge({ eventName: CHARGE_EVENT });
     summary.charged += 1;
   } catch {
-    // Not running in pay-per-event mode (e.g. local run) — skip metering.
+    /* not in pay-per-event mode */
   }
 }
 
-/** Push one row and update the summary. Charges only successful verifications. */
 async function record(row) {
   if (row.ok) {
     summary.verified += 1;
@@ -197,7 +163,6 @@ try {
 
 await Actor.exit();
 
-// ── realtime: one request per email, concurrent, streamed ──────────────────
 async function runRealtime() {
   let cursor = 0;
   let done = 0;
@@ -217,8 +182,6 @@ async function runRealtime() {
         const text = await res.text().catch(() => '');
         return { email, ok: false, statusCode: res.status, error: text.slice(0, 300) };
       }
-      // SSE: wait for the catch-all deep check to finish and take the final verdict.
-      // Falls back to plain JSON if the server chose not to stream.
       if ((res.headers.get('content-type') || '').includes('text/event-stream')) {
         const final = await readFinalSSEResult(res);
         if (final.result) return { email, ok: true, ...final.result };
@@ -235,9 +198,6 @@ async function runRealtime() {
     while (cursor < total) {
       const email = emails[cursor++];
       let row = await verifyOne(email);
-      // A "risky" verdict on a catch-all can be a stale cache or an unresolved
-      // deep check. Force one fresh deep check before accepting it — the probe
-      // often resolves to safe/invalid on a second attempt.
       if (row.ok && row.reachable === 'risky' && row.smtp?.catchAll) {
         const fresh = await verifyOne(email, true);
         if (fresh.ok) row = fresh;
@@ -253,9 +213,7 @@ async function runRealtime() {
   await Promise.all(Array.from({ length: Math.min(concurrency, total) }, worker));
 }
 
-// ── bulk: submit once → poll progress → page results ───────────────────────
 async function runBulk() {
-  // 1) Submit the whole list.
   const submit = await fetchWithRetry(bulkUrl, {
     method: 'POST',
     headers,
@@ -270,7 +228,6 @@ async function runBulk() {
   if (!jobId) throw new Error('Bulk submit returned no jobId.');
   await Actor.setStatusMessage(`Bulk job ${jobId} submitted (${totalEmails ?? emails.length}). Verifying…`);
 
-  // 2) Poll until a terminal status (6h safety cap).
   const TERMINAL = new Set(['completed', 'failed', 'stopped']);
   const deadline = Date.now() + 6 * 60 * 60 * 1000;
   let status = 'processing';
@@ -287,7 +244,6 @@ async function runBulk() {
   }
   if (status === 'failed') throw new Error(`Bulk job ${jobId} failed.`);
 
-  // 3) Page results into the dataset.
   let cursor = 0;
   let pushed = 0;
   while (cursor !== null && cursor !== undefined) {

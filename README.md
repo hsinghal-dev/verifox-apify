@@ -9,7 +9,8 @@
 ## Why Verifox
 
 - **Real SMTP checks**, not just syntax/MX guessing — actual mailbox reachability.
-- **Catch-all & disposable detection** so you don't ship to traps or temp-mail.
+- **Catch-all deep check** — resolves accept-all Gmail/Microsoft domains to a real `safe`/`invalid` verdict instead of leaving them `risky`.
+- **Disposable & role detection** so you don't ship to traps or temp-mail.
 - **0–100 quality score** to rank and threshold leads at a glance.
 - **Fast at scale** — realtime concurrency for small lists, a true bulk pipeline for large ones (up to 100k).
 - **Reliable** — automatic retry/backoff on rate-limits and transient errors; nothing silently dropped.
