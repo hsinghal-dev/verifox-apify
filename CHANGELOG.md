@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2
+- Catch-all retry: in realtime mode, a "risky" verdict on a catch-all domain now
+  triggers one fresh deep check (?refresh=true) before it's accepted, since a
+  stale cache or an unresolved first probe often resolves to safe/invalid on the
+  second attempt.
+
 ## 0.3.1
 - Realtime mode now verifies over SSE, so catch-all Gmail/Microsoft addresses get
   the server's deep-check upgrade (risky → safe/invalid) instead of the tighter

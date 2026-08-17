@@ -203,9 +203,10 @@ async function runRealtime() {
   let done = 0;
   const total = emails.length;
 
-  async function verifyOne(email) {
+  async function verifyOne(email, refresh = false) {
+    const url = refresh ? `${singleUrl}?refresh=true` : singleUrl;
     try {
-      const res = await fetchWithRetry(singleUrl, {
+      const res = await fetchWithRetry(url, {
         method: 'POST',
         headers: { ...headers, accept: 'text/event-stream' },
         body: JSON.stringify({ email }),
@@ -233,7 +234,15 @@ async function runRealtime() {
   async function worker() {
     while (cursor < total) {
       const email = emails[cursor++];
-      await record(await verifyOne(email));
+      let row = await verifyOne(email);
+      // A "risky" verdict on a catch-all can be a stale cache or an unresolved
+      // deep check. Force one fresh deep check before accepting it — the probe
+      // often resolves to safe/invalid on a second attempt.
+      if (row.ok && row.reachable === 'risky' && row.smtp?.catchAll) {
+        const fresh = await verifyOne(email, true);
+        if (fresh.ok) row = fresh;
+      }
+      await record(row);
       done += 1;
       if (done % 25 === 0 || done === total) {
         await Actor.setStatusMessage(`Verified ${done}/${total}`);
