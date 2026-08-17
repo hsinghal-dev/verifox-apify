@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1
+- Realtime mode now verifies over SSE, so catch-all Gmail/Microsoft addresses get
+  the server's deep-check upgrade (risky → safe/invalid) instead of the tighter
+  40s non-streaming budget that leaves them stuck at "risky". Bulk mode already
+  runs the catch-all enhancement server-side.
+
 ## 0.3.0
 - Fully managed: removed the user-facing API key. Verification now runs on a
   Verifox key set by the owner as a secret env var (`VERIFOX_API_KEY`) — users

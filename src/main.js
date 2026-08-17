@@ -6,8 +6,9 @@
 // monetization: every successfully verified email is metered via Actor.charge().
 //
 // Modes (input.mode):
-//   - realtime : POST /v1/email-validation per email at `concurrency`, streaming
-//                one dataset row as each result returns. Best for small/medium.
+//   - realtime : POST /v1/email-validation per email at `concurrency` over SSE,
+//                so catch-all Gmail/Microsoft get the full deep-check upgrade
+//                (risky → safe/invalid). One dataset row streams per result.
 //   - bulk     : POST /v1/email-validation/bulk once, poll progress, page results.
 //                Fewest HTTP calls; best for very large lists.
 //   - auto     : bulk when the list is large (> 500), else realtime. (default)
@@ -87,6 +88,64 @@ async function fetchWithRetry(url, options = {}, retries = 3) {
   }
 }
 
+/**
+ * Read the verify endpoint's Server-Sent Events stream and return the final
+ * verdict. The server emits the phase-1 result (`deepCheckPending: true`), then —
+ * for catch-all Gmail/Microsoft — a deep-checked upgrade (`deepCheckPending:
+ * false`). We keep the last `result` event, drop the internal flag, and map an
+ * `error` event to a failure.
+ */
+async function readFinalSSEResult(res) {
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let lastResult = null;
+  let errorMessage = null;
+
+  const handleEvent = (block) => {
+    let name = 'message';
+    const data = [];
+    for (const rawLine of block.split('\n')) {
+      const line = rawLine.replace(/\r$/, '');
+      if (line.startsWith('event:')) name = line.slice(6).trim();
+      else if (line.startsWith('data:')) data.push(line.slice(5).replace(/^ /, ''));
+    }
+    if (data.length === 0) return;
+    const payload = data.join('\n');
+    if (name === 'result') {
+      try {
+        lastResult = JSON.parse(payload);
+      } catch {
+        // Ignore a partial/non-JSON payload; a later event supersedes it.
+      }
+    } else if (name === 'error') {
+      try {
+        errorMessage = JSON.parse(payload)?.error ?? payload;
+      } catch {
+        errorMessage = payload;
+      }
+    }
+  };
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let sep;
+    while ((sep = buffer.indexOf('\n\n')) !== -1) {
+      handleEvent(buffer.slice(0, sep));
+      buffer = buffer.slice(sep + 2);
+    }
+  }
+  if (buffer.trim()) handleEvent(buffer);
+
+  if (lastResult) {
+    const { deepCheckPending, ...result } = lastResult;
+    return { result };
+  }
+  return { error: errorMessage ?? 'Stream ended without a result.' };
+}
+
 /** Auth/credit failures are fatal — no point retrying the rest of the list. */
 function assertAuthAndCredits(status) {
   if (status === 401 || status === 403) {
@@ -148,13 +207,21 @@ async function runRealtime() {
     try {
       const res = await fetchWithRetry(singleUrl, {
         method: 'POST',
-        headers,
+        headers: { ...headers, accept: 'text/event-stream' },
         body: JSON.stringify({ email }),
+        signal: AbortSignal.timeout(150000),
       });
       assertAuthAndCredits(res.status);
       if (!res.ok) {
         const text = await res.text().catch(() => '');
         return { email, ok: false, statusCode: res.status, error: text.slice(0, 300) };
+      }
+      // SSE: wait for the catch-all deep check to finish and take the final verdict.
+      // Falls back to plain JSON if the server chose not to stream.
+      if ((res.headers.get('content-type') || '').includes('text/event-stream')) {
+        const final = await readFinalSSEResult(res);
+        if (final.result) return { email, ok: true, ...final.result };
+        return { email, ok: false, error: final.error };
       }
       return { email, ok: true, ...(await res.json()) };
     } catch (err) {
