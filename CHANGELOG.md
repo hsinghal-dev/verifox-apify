@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.3
+- Align to the live pay-per-result pricing ($0.004 per email checked). Removed the
+  no-op `email-verified` charge call (Apify meters the default-dataset item event
+  automatically); updated README/description to match.
+
 ## 0.3.2
 - Catch-all retry: in realtime mode, a "risky" verdict on a catch-all domain now
   triggers one fresh deep check (?refresh=true) before it's accepted, since a

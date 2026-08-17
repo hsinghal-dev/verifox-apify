@@ -7,7 +7,6 @@ const apiKey = process.env.VERIFOX_API_KEY;
 const concurrency = Math.max(1, Math.min(Number(input.concurrency) || 5, 20));
 const apiBaseUrl = (input.apiBaseUrl || 'https://api.verifox.ai').replace(/\/+$/, '');
 const mode = ['auto', 'realtime', 'bulk'].includes(input.mode) ? input.mode : 'auto';
-const CHARGE_EVENT = 'email-verified';
 
 let raw = input.emails ?? [];
 if (typeof raw === 'string') raw = raw.split(/[\n,;]+/);
@@ -39,7 +38,6 @@ const summary = {
   total: emails.length,
   verified: 0,
   failed: 0,
-  charged: 0,
   reachable: { safe: 0, risky: 0, invalid: 0, unknown: 0 },
 };
 
@@ -124,22 +122,12 @@ function assertAuthAndCredits(status) {
   }
 }
 
-async function charge() {
-  try {
-    await Actor.charge({ eventName: CHARGE_EVENT });
-    summary.charged += 1;
-  } catch {
-    /* not in pay-per-event mode */
-  }
-}
-
 async function record(row) {
   if (row.ok) {
     summary.verified += 1;
     const r = String(row.reachable ?? 'unknown');
     if (r in summary.reachable) summary.reachable[r] += 1;
     else summary.reachable.unknown += 1;
-    await charge();
   } else {
     summary.failed += 1;
   }

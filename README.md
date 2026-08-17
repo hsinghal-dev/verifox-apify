@@ -2,7 +2,7 @@
 
 **Bulk-verify email deliverability with [Verifox](https://verifox.ai) — right inside your Apify workflows.** Drop in a list of emails (or pipe in a dataset from any scraper) and get a precise, per-email verdict: valid, reachable, disposable, role-based, free-provider, catch-all, and a **0–100 quality score**. Export to CSV, JSON, or Excel, or chain it straight into your next step.
 
-> ✅ **No API key. No account. No setup.** Just paste your emails and run. You pay **only for emails that successfully verify** — failed and unverifiable rows are free.
+> ✅ **No API key. No account. No setup.** Just paste your emails and run. Simple, predictable pricing — a flat rate per email checked.
 
 ---
 
@@ -50,7 +50,7 @@ A **run summary** (counts by verdict) is also written to the key-value store as 
 
 ## Pricing
 
-**Pay per result: $0.002 per successfully verified email.** Emails that fail or can't be verified cost nothing. Apify's usual platform compute applies on top.
+**Pay per result: $0.004 per email checked** ($4.00 per 1,000). Predictable, list-size × rate — no platform compute charges on top.
 
 ## Input
 
@@ -98,9 +98,9 @@ A **run summary** (counts by verdict) is also written to the key-value store as 
 ## FAQ
 
 **Do I need a Verifox account or API key?** No. Verification is fully managed — just paste emails and run.
-**What does a run cost?** $0.002 per successfully verified email + Apify's usual platform compute. Failed rows are free.
+**What does a run cost?** $0.004 per email checked ($4.00 per 1,000). Predictable up front: list size × rate.
 **How big a list can it handle?** Up to 100k in bulk mode.
-**What if an address can't be checked?** You still get a row with `ok: false` and the reason — nothing is dropped, and you're not charged for it.
+**What if an address can't be checked?** You still get a row with `ok: false` and the reason — nothing is dropped.
 
 ---
 
