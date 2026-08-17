@@ -2,7 +2,7 @@
 
 **Bulk-verify email deliverability with [Verifox](https://verifox.ai) — right inside your Apify workflows.** Drop in a list of emails (or pipe in a dataset from any scraper) and get a precise, per-email verdict: valid, reachable, disposable, role-based, free-provider, catch-all, and a **0–100 quality score**. Export to CSV, JSON, or Excel, or chain it straight into your next step.
 
-> 🔑 **Free to run — bring your own Verifox key.** Verifications go through *your* Verifox account and use *your* credits. Free signup includes **1,000 credits**.
+> ✅ **No API key. No account. No setup.** Just paste your emails and run. You pay **only for emails that successfully verify** — failed and unverifiable rows are free.
 
 ---
 
@@ -42,18 +42,20 @@ A **run summary** (counts by verdict) is also written to the key-value store as 
 | **Realtime** | One request per email, parallel (`concurrency`), streamed as they finish | Small/medium lists, live progress |
 | **Bulk** | Submits the whole list to the Verifox bulk API, polls to completion, collects results | Large lists (up to 100k), fewest calls |
 
-## Setup (30 seconds)
+## Setup (10 seconds)
 
-1. Create a free **Verifox** account → **https://verifox.ai** (includes **1,000 credits**).
-2. Open **[verifox.ai/dashboard/api](https://verifox.ai/dashboard/api)** → create an API key.
-3. Paste it into the Actor's **Verifox API key** field. Each verification uses one Verifox credit from your account.
+1. Paste (or map in) your list of emails.
+2. Run. That's it — no API key, no account, no configuration.
+
+## Pricing
+
+**Pay per result: $0.002 per successfully verified email.** Emails that fail or can't be verified cost nothing. Apify's usual platform compute applies on top.
 
 ## Input
 
 | Field | Required | Description |
 |-------|----------|-------------|
 | `emails` | ✅ | List of emails (paste, or map a field from another Actor) |
-| `apiKey` | ✅ | Your Verifox API key (kept secret) |
 | `mode` | — | `auto` (default) · `realtime` · `bulk` |
 | `concurrency` | — | Parallel verifications in realtime mode, 1–20 (default 5) |
 | `apiBaseUrl` | — | Advanced override; leave default |
@@ -94,11 +96,10 @@ A **run summary** (counts by verdict) is also written to the key-value store as 
 
 ## FAQ
 
-**Do I need a Verifox account?** Yes — this is bring-your-own-key. Signup is free and includes 1,000 credits.
-**What does a run cost?** Apify's small compute cost + one Verifox credit per email (from your account).
+**Do I need a Verifox account or API key?** No. Verification is fully managed — just paste emails and run.
+**What does a run cost?** $0.002 per successfully verified email + Apify's usual platform compute. Failed rows are free.
 **How big a list can it handle?** Up to 100k in bulk mode.
-**What if an address can't be checked?** You still get a row with `ok: false` and the reason — nothing is dropped.
-**Invalid key / no credits?** The run stops immediately with a clear message (`401/403` or `402`).
+**What if an address can't be checked?** You still get a row with `ok: false` and the reason — nothing is dropped, and you're not charged for it.
 
 ---
 

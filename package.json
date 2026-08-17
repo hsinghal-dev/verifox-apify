@@ -1,8 +1,8 @@
 {
   "name": "verifox-email-verifier",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
-  "description": "Apify actor: bulk email verification via the Verifox API (bring your own key).",
+  "description": "Apify actor: bulk email verification via the Verifox API (fully managed, pay per verified email).",
   "engines": {
     "node": ">=20"
   },

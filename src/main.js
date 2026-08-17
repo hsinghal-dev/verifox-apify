@@ -1,4 +1,9 @@
-// Verifox Email Verifier — Apify actor (bring-your-own Verifox API key).
+// Verifox Email Verifier — Apify actor (fully managed, no API key needed).
+//
+// Users paste only emails. Verification runs on a Verifox key that the Actor
+// owner sets ONCE as a secret env var (VERIFOX_API_KEY) in the Apify Console —
+// never exposed to users. Billing is handled by Apify's pay-per-event
+// monetization: every successfully verified email is metered via Actor.charge().
 //
 // Modes (input.mode):
 //   - realtime : POST /v1/email-validation per email at `concurrency`, streaming
@@ -7,18 +12,18 @@
 //                Fewest HTTP calls; best for very large lists.
 //   - auto     : bulk when the list is large (> 500), else realtime. (default)
 //
-// Runs on the CALLER'S Verifox credits (their API key) — no shared key, no cost
-// to Verifox. Resilient to rate-limits/transient errors (retry with backoff) and
-// fails with a readable reason. Writes a run summary to the key-value store.
+// Resilient to rate-limits/transient errors (retry with backoff) and fails with
+// a readable reason. Writes a run summary to the key-value store.
 import { Actor } from 'apify';
 
 await Actor.init();
 
 const input = (await Actor.getInput()) ?? {};
-const apiKey = input.apiKey;
+const apiKey = process.env.VERIFOX_API_KEY;
 const concurrency = Math.max(1, Math.min(Number(input.concurrency) || 5, 20));
 const apiBaseUrl = (input.apiBaseUrl || 'https://api.verifox.ai').replace(/\/+$/, '');
 const mode = ['auto', 'realtime', 'bulk'].includes(input.mode) ? input.mode : 'auto';
+const CHARGE_EVENT = 'email-verified';
 
 // Accept an array, or a single string pasted with newlines/commas/semicolons.
 let raw = input.emails ?? [];
@@ -31,20 +36,17 @@ if (emails.length === 0) {
   await Actor.exit();
 }
 
-// No API key? Emit a helpful row and finish SUCCESSFULLY rather than failing.
-// This guides real users AND keeps Apify's daily auto-test green (it runs with
-// the default input, which has no key) — so the Actor is never flagged
-// "under maintenance". Uses zero credits.
+// Not configured yet? Emit a helpful row and finish SUCCESSFULLY rather than
+// failing. This keeps Apify's daily auto-test green until the owner sets the key
+// and charges nothing. Owner sets VERIFOX_API_KEY (Secret) in Actor Settings.
 if (!apiKey) {
   await Actor.pushData({
     email: emails[0],
     ok: false,
     error:
-      'Add your Verifox API key to verify emails. Create a free key (1,000 credits) at https://verifox.ai/dashboard/api',
+      'Actor is not configured yet (missing VERIFOX_API_KEY). The owner must set it in Actor Settings → Environment variables.',
   });
-  await Actor.setStatusMessage(
-    'Add your Verifox API key to verify emails → https://verifox.ai/dashboard/api',
-  );
+  await Actor.setStatusMessage('Actor not configured — VERIFOX_API_KEY is not set.');
   await Actor.exit();
 }
 
@@ -59,6 +61,7 @@ const summary = {
   total: emails.length,
   verified: 0,
   failed: 0,
+  charged: 0,
   reachable: { safe: 0, risky: 0, invalid: 0, unknown: 0 },
 };
 
@@ -87,20 +90,31 @@ async function fetchWithRetry(url, options = {}, retries = 3) {
 /** Auth/credit failures are fatal — no point retrying the rest of the list. */
 function assertAuthAndCredits(status) {
   if (status === 401 || status === 403) {
-    throw new Error('Verifox rejected the API key (401/403). Check the key is valid and active.');
+    throw new Error('Verification is temporarily unavailable (auth error). Please try again later.');
   }
   if (status === 402) {
-    throw new Error('Out of Verifox credits (402). Top up at https://verifox.ai/dashboard/api');
+    throw new Error('Verification is temporarily unavailable (capacity). Please try again later.');
   }
 }
 
-/** Push one row and update the summary. */
+/** Meter one successful verification via Apify pay-per-event billing. */
+async function charge() {
+  try {
+    await Actor.charge({ eventName: CHARGE_EVENT });
+    summary.charged += 1;
+  } catch {
+    // Not running in pay-per-event mode (e.g. local run) — skip metering.
+  }
+}
+
+/** Push one row and update the summary. Charges only successful verifications. */
 async function record(row) {
   if (row.ok) {
     summary.verified += 1;
     const r = String(row.reachable ?? 'unknown');
     if (r in summary.reachable) summary.reachable[r] += 1;
     else summary.reachable.unknown += 1;
+    await charge();
   } else {
     summary.failed += 1;
   }
@@ -144,7 +158,7 @@ async function runRealtime() {
       }
       return { email, ok: true, ...(await res.json()) };
     } catch (err) {
-      if (err instanceof Error && /API key|credits/.test(err.message)) throw err;
+      if (err instanceof Error && /temporarily unavailable/.test(err.message)) throw err;
       return { email, ok: false, error: String(err?.message ?? err) };
     }
   }

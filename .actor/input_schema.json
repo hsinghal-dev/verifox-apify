@@ -1,6 +1,6 @@
 {
   "title": "Verifox Email Verifier",
-  "description": "Bulk-verify email deliverability with Verifox. Bring your own Verifox API key.",
+  "description": "Bulk-verify email deliverability with Verifox. No API key needed — you only pay for emails that successfully verify.",
   "type": "object",
   "schemaVersion": 1,
   "properties": {
@@ -10,15 +10,6 @@
       "description": "Email addresses to verify. Paste a list, or map in a field from another Actor's dataset.",
       "editor": "stringList",
       "prefill": ["support@stripe.com"]
-    },
-    "apiKey": {
-      "sectionCaption": "Verifox API key",
-      "sectionDescription": "No key yet? **[Create one free at verifox.ai/dashboard/api →](https://verifox.ai/dashboard/api)** — free signup includes 1,000 credits. Verifications run on your own Verifox account and use your credits.",
-      "title": "Verifox API key",
-      "type": "string",
-      "description": "Paste your Verifox API key. Get it at https://verifox.ai/dashboard/api",
-      "editor": "textfield",
-      "isSecret": true
     },
     "mode": {
       "sectionCaption": "Options",
@@ -33,7 +24,7 @@
     "concurrency": {
       "title": "Concurrency (realtime mode)",
       "type": "integer",
-      "description": "How many emails to verify in parallel in realtime mode (1–20). Higher is faster but uses your credits quicker.",
+      "description": "How many emails to verify in parallel in realtime mode (1–20). Higher is faster.",
       "default": 5,
       "minimum": 1,
       "maximum": 20
