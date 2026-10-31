@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.4
+- Security: removed the `apiBaseUrl` input. It let a run send the Actor's Verifox
+  key to any URL. The API base is now fixed.
+- Store listing: new title, description and README. Pricing copy now says every
+  result row is charged, including `ok: false` rows.
+
 ## 0.3.3
 - Align to the live pay-per-result pricing ($0.004 per email checked). Removed the
   no-op `email-verified` charge call (Apify meters the default-dataset item event
