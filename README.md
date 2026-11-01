@@ -24,7 +24,15 @@ Duplicates are removed before verification, so each unique address is checked on
 
 ## How much does email verification cost?
 
-**$4.00 per 1,000 results ($0.004 per email)**, plus an Actor start event of $0.00005 per run. There are no platform compute charges on top, so the cost is list size × rate. You can cap any run with **Maximum cost per run**.
+**From $4.00 per 1,000 results ($0.004 per email)**, with lower prices on higher Apify plans:
+
+| Apify plan | Price per 1,000 results |
+|------------|-------------------------|
+| Free, Starter | $4.00 |
+| Scale | $3.50 |
+| Business | $3.00 |
+
+Each run also has an Actor start event of $0.00005. There are no platform compute charges on top, so the cost is list size × rate. You can cap any run with **Maximum cost per run**.
 
 Each address produces one result. A row where an address could not be checked (`ok: false`) is still a result and is charged the same way.
 
